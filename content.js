@@ -4,7 +4,7 @@ const version = 'v2.0';
 console.log(`Secure My Password Manager Content Script Loaded ${version}`);
 
 // --- Configuration ---
-const GENERATE_BUTTON_TEXT = 'Generate & Fill';
+const GENERATE_BUTTON_TEXT = 'Unlock & Fill';
 const COPY_BUTTON_TEXT = 'Copy Password';
 const CLEAR_BUTTON_TEXT = 'Clear';
 const BUTTON_ICON_URL = chrome.runtime.getURL('icon16.png');
@@ -107,7 +107,7 @@ function addButton(form, passwordInput, initialState = BUTTON_STATE.GENERATE) {
     button.setAttribute(BUTTON_ADDED_MARKER, 'true');
     button.dataset.buttonState = initialState; // Use dataset instead of setAttribute
     // Set base styling
-    button.style.marginLeft = '5px';
+    button.style.marginLeft = '0px';
     button.style.marginBottom = '10px';
     //button.style.padding = '5px 8px';
     button.style.cursor = 'pointer';
@@ -191,7 +191,7 @@ function handleButtonClick(event) {
 }
 
 /**
- * Handles the Generate & Fill button click.
+ * Handles the Unlock & Fill button click.
  * @param {Event} event - The click event.
  */
 function handleGenerateClick(event) {

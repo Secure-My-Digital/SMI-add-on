@@ -1,9 +1,9 @@
 {
   "thisFile": "config.json",
   "date": "Tue Apr 22 04:13:18 PM CEST 2025",
-  "version": "0.0.73",
-  "build": "xefaf",
-  "qm": "QmQnHnbgRBkfx488A5jTXt3fYFPLtp9hCM4LCfsLnMo9Fo",
+  "version": "0.0",
+  "build": "bsu",
+  "qm": "QmfSnGmfexFsLDkbgN76Qhx2W8sxrNDobFEQZ6ER5qg2wW",
   "settings": {
     "microsoft": {
       "timeoutSeconds" : "60",

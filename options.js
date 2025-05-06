@@ -7,8 +7,6 @@ const TIMEOUT_STORAGE_KEY = 'siteSecretTimeoutMinutes';
 const USE_EMOJIS_STORAGE_KEY = 'useEmojisForPassword';
 const PASSWORD_LENGTH_STORAGE_KEY = 'passwordLength';
 const USE_KEYSTROKES_STORAGE_KEY = 'useKeystrokesAsInputs'; // Renamed
-const IS_USER_REGISTERED_STORAGE_KEY = 'isUserRegistered'; // Constant for registration status
-const IS_REGISTRATION_FEATURE_ENABLED_STORAGE_KEY = 'isRegistrationFeatureEnabled'; // New constant for registration feature setting
 
 
 // --- Global Variables ---
@@ -28,23 +26,20 @@ document.addEventListener('DOMContentLoaded', async () => { // Made DOMContentLo
     const statusDisplay = document.getElementById('statusText');
     const expiryDisplay = document.getElementById('countdownDisplay');
     const autoLockInfo = document.getElementById('autoLockInfo');
+    const timeoutValueDisplay = document.getElementById('timeoutValueDisplay');
+    const timeoutSlider = document.getElementById('timeoutSlider'); // Get the slider
+    const timeoutMessage = document.getElementById('timeoutMessage');
     const messageArea = document.getElementById('messageArea');
 
     // Elements for displaying manifest info and calling tab URL
     const productNameElement = document.getElementById('productName');
     const extensionVersionElement = document.getElementById('extensionVersion');
-     const extensionVersionAboutElement = document.getElementById('extensionVersionAbout'); // Added for About tab
+    const extensionVersionAboutElement = document.getElementById('extensionVersionAbout'); // Added for About tab
+    const extensionBuildAboutElement = document.getElementById('extensionBuildAbout');
     const callingTabUrlDisplay = document.getElementById('callingTabUrlDisplay'); // Added element for calling tab URL
 
     // Element for peeking password
     const peekPasswordElement = document.getElementById('peekEasyPassword');
-
-    // Elements for registration
-    const registrationPrompt = document.getElementById('registrationPrompt'); // Container for registration message/button
-    const registerButton = document.getElementById('registerButton'); // Button to trigger registration
-    // New checkbox for registration feature setting
-    const enableRegistrationCheckbox = document.getElementById('enableRegistrationCheckbox');
-
 
     // Settings Elements
     const settingsTabButton = document.querySelector('.tab[data-tab="tabSettings"]');
@@ -53,11 +48,8 @@ document.addEventListener('DOMContentLoaded', async () => { // Made DOMContentLo
     const lengthMessage = document.getElementById('lengthMessage');
     const useEmojisCheckbox = document.getElementById('useEmojisCheckbox');
     const emojisMessage = document.getElementById('emojisMessage');
-    const timeoutValueDisplay = document.getElementById('timeoutValueDisplay');
-    const timeoutSlider = document.getElementById('timeoutSlider'); // Get the slider
-    const timeoutMessage = document.getElementById('timeoutMessage');
-    const useKeystrokesCheckbox = document.getElementById('useKeystrokesCheckbox'); // Renamed
-    const keystrokesMessage = document.getElementById('keystrokesMessage'); // Renamed
+    const useKeystrokesCheckbox = document.getElementById('useKeystrokesCheckbox');
+    const keystrokesMessage = document.getElementById('keystrokesMessage');
 
     // Tabs
     const tabs = document.querySelectorAll('.tab');
@@ -76,6 +68,11 @@ document.addEventListener('DOMContentLoaded', async () => { // Made DOMContentLo
      if (extensionVersionAboutElement) {
          extensionVersionAboutElement.textContent = manifest.version; // Set version in About tab
      }
+    /*
+     if (extensionBuildAboutElement) {
+         extensionBuildAboutElement.textContent = config.build; // Set Build in About tab
+     }
+     */
 
 
     // --- UI Update Function ---
@@ -94,10 +91,8 @@ document.addEventListener('DOMContentLoaded', async () => { // Made DOMContentLo
 
         if (isUnlocked) {
             // --- UI when UNLOCKED ---
-            if (unlockSection) unlockSection.classList.add('hidden'); // Hide unlock section
+           // if (unlockSection) unlockSection.classList.add('hidden'); // Hide unlock section
             if (lockSection) lockSection.classList.remove('hidden'); // Show lock section
-            // Hide registration prompt if it exists (always hidden if unlocked)
-            if (registrationPrompt) registrationPrompt.classList.add('hidden');
 
 
             if (statusDisplay) { statusDisplay.textContent = 'Status: Unlocked'; statusDisplay.className = 'status-unlocked'; }
@@ -125,19 +120,14 @@ document.addEventListener('DOMContentLoaded', async () => { // Made DOMContentLo
             // loadAndApplySettings(currentTimeout); // Pass currentTimeout
 
         } else {
-            // --- UI when LOCKED ---
-            // The visibility of unlockSection and registrationPrompt is now handled by checkRegistrationStatus
             if (lockSection) lockSection.classList.add('hidden'); // Hide lock section
-
-
             if (statusDisplay) { statusDisplay.textContent = 'Status: Locked'; statusDisplay.className = 'status-locked'; }
-            // Do NOT disable settings tab here - no change needed
 
 
             stopCountdown();
             if (autoLockInfo) autoLockInfo.style.display = 'none';
             if (expiryDisplay) expiryDisplay.style.display = 'none';
-            // Focus password input only if unlockSection is visible (i.e., registration prompt is hidden)
+            // Focus password input only if unlockSection is visible
             if (unlockSection && !unlockSection.classList.contains('hidden') && sitePasswordInput) {
                  sitePasswordInput.focus();
             }
@@ -224,11 +214,10 @@ document.addEventListener('DOMContentLoaded', async () => { // Made DOMContentLo
         try {
             // Define keys to fetch using the constants
             const settingKeys = [
-                PASSWORD_LENGTH_STORAGE_KEY,
-                USE_EMOJIS_STORAGE_KEY,
                 TIMEOUT_STORAGE_KEY, // Fetch timeout to ensure slider consistency if needed
                 USE_KEYSTROKES_STORAGE_KEY, // Use the renamed constant
-                IS_REGISTRATION_FEATURE_ENABLED_STORAGE_KEY // Fetch registration feature setting
+                PASSWORD_LENGTH_STORAGE_KEY,
+                USE_EMOJIS_STORAGE_KEY,
             ];
 
             // TBD: can we have chrome.storage.local in readonly mode from options page ?
@@ -248,12 +237,6 @@ document.addEventListener('DOMContentLoaded', async () => { // Made DOMContentLo
             if (useKeystrokesCheckbox && typeof USE_KEYSTROKES_STORAGE_KEY !== 'undefined') {
                 useKeystrokesCheckbox.checked = settingsData?.[USE_KEYSTROKES_STORAGE_KEY] ?? true; // default is useKeystrokes
             }
-
-            // Apply Registration Feature Setting
-            if (enableRegistrationCheckbox && typeof IS_REGISTRATION_FEATURE_ENABLED_STORAGE_KEY !== 'undefined') {
-                 enableRegistrationCheckbox.checked = settingsData?.[IS_REGISTRATION_FEATURE_ENABLED_STORAGE_KEY] ?? false; // Default to false
-            }
-
 
             // Apply Timeout Setting Display & Slider Value
             const timeoutToDisplay = currentTimeout !== null ? currentTimeout : (settingsData?.[TIMEOUT_STORAGE_KEY] ?? 5);
@@ -471,31 +454,6 @@ document.addEventListener('DOMContentLoaded', async () => { // Made DOMContentLo
         });
     }
 
-    // --- Registration Feature Setting Listener ---
-    if (enableRegistrationCheckbox && typeof IS_REGISTRATION_FEATURE_ENABLED_STORAGE_KEY !== 'undefined') {
-        enableRegistrationCheckbox.addEventListener('change', () => {
-            const isEnabled = enableRegistrationCheckbox.checked;
-            // Send message to background to save setting
-            chrome.runtime.sendMessage({ action: "setRegistrationEnabled", enabled: isEnabled }, (response) => {
-                if (chrome.runtime.lastError || !response?.success) {
-                    console.error("Error setting registration enabled status:", chrome.runtime.lastError?.message || response?.error);
-                    // Revert checkbox state on error
-                    enableRegistrationCheckbox.checked = !isEnabled;
-                    if (messageArea) {
-                         messageArea.textContent = `Error saving setting: ${chrome.runtime.lastError?.message || response?.error}`;
-                         messageArea.className = 'message error';
-                         messageArea.style.display = 'block';
-                    }
-                } else {
-                    console.log("Registration feature enabled status saved:", isEnabled);
-                    // Re-check registration status to update UI based on new setting
-                    checkRegistrationStatus();
-                }
-            });
-        });
-    }
-
-
     // --- Tab Switching Logic ---
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -518,11 +476,6 @@ document.addEventListener('DOMContentLoaded', async () => { // Made DOMContentLo
                 fetchAndUpdateStatus();
                 fetchAndDisplayCallingTabUrl(); // Fetch URL when switching to lock tab
             }
-            // If switching to settings, ensure settings are loaded (might already be if unlocked)
-            // This is handled by fetchAndUpdateStatus -> updateUI -> loadAndApplySettings when unlocked
-            // if (tab.dataset.tab === 'tabSettings') {
-            //      fetchAndUpdateStatus(); // Or rely on updateUI calling loadAndApplySettings
-            // }
         });
     });
 
@@ -544,116 +497,6 @@ document.addEventListener('DOMContentLoaded', async () => { // Made DOMContentLo
             sitePasswordInput.type = 'password';
         });
     }
-
-    // --- Registration Logic ---
-    async function checkRegistrationStatus() {
-        console.log("Checking registration status...");
-        try {
-            const result = await chrome.storage.local.get([IS_USER_REGISTERED_STORAGE_KEY, IS_REGISTRATION_FEATURE_ENABLED_STORAGE_KEY]);
-            const isRegistered = result?.[IS_USER_REGISTERED_STORAGE_KEY] ?? false; // Default to false if not set
-            const isRegistrationFeatureEnabled = result?.[IS_REGISTRATION_FEATURE_ENABLED_STORAGE_KEY] ?? false; // Default to false
-
-            const mainContent = document.querySelector('.container'); // Assuming your main content is in a .container
-            const tabContainer = document.querySelector('.tab-container'); // Assuming your tabs are in a .tab-container
-
-
-            if (!isRegistrationFeatureEnabled) {
-                console.log("Registration feature is disabled. Showing main options.");
-                // Hide registration prompt and show main content regardless of IS_USER_REGISTERED_STORAGE_KEY
-                if (registrationPrompt) registrationPrompt.classList.add('hidden');
-                if (unlockSection) unlockSection.classList.remove('hidden'); // Ensure unlock section is visible
-                if (mainContent) mainContent.classList.remove('hidden');
-                if (tabContainer) tabContainer.classList.remove('hidden');
-
-                // Ensure the first tab content is active
-                const firstTabContent = document.querySelector('.tab-content');
-                if (firstTabContent) { // Ensure firstTabContent exists
-                     tabContents.forEach(c => c.classList.remove('active')); // Deactivate others
-                     firstTabContent.classList.add('active');
-                     tabs.forEach(t => t.classList.remove('active')); // Deactivate tab buttons
-                     const firstTabButton = document.querySelector('.tab[data-tab="tabLock"]'); // Assuming 'tabLock' is the first tab
-                     if(firstTabButton) firstTabButton.classList.add('active');
-                }
-
-
-                // Proceed with normal options page initialization (status, URL, settings)
-                fetchAndUpdateStatus();
-                fetchAndDisplayCallingTabUrl();
-
-            } else {
-                console.log("Registration feature is enabled. Checking user registration status.");
-            if (isRegistered) {
-                console.log("User is registered. Showing main options.");
-                if (registrationPrompt) registrationPrompt.classList.add('hidden');
-                    if (unlockSection) unlockSection.classList.remove('hidden'); // Ensure unlock section is visible
-                 if (mainContent) mainContent.classList.remove('hidden');
-                 if (tabContainer) tabContainer.classList.remove('hidden');
-
-                // Ensure the first tab content is active
-                 const firstTabContent = document.querySelector('.tab-content');
-                 if (firstTabContent) { // Ensure firstTabContent exists
-                      tabContents.forEach(c => c.classList.remove('active')); // Deactivate others
-                      firstTabContent.classList.add('active');
-                      tabs.forEach(t => t.classList.remove('active')); // Deactivate tab buttons
-                      const firstTabButton = document.querySelector('.tab[data-tab="tabLock"]'); // Assuming 'tabLock' is the first tab
-                      if(firstTabButton) firstTabButton.classList.add('active');
-                 }
-
-
-                // Proceed with normal options page initialization
-                fetchAndUpdateStatus();
-                fetchAndDisplayCallingTabUrl();
-
-            } else {
-                console.log("User is not registered. Showing registration prompt.");
-                if (registrationPrompt) registrationPrompt.classList.remove('hidden');
-                 // Hide main content areas
-                     if (unlockSection) unlockSection.classList.add('hidden'); // Hide unlock section
-                     if (lockSection) lockSection.classList.add('hidden'); // Hide lock section
-                 if (mainContent) mainContent.classList.add('hidden');
-                 if (tabContainer) tabContainer.classList.add('hidden');
-
-
-                    // Add listener for the register button if it exists (only needs to be added once)
-                    if (registerButton && !registerButton.dataset.listenerAdded) {
-                    registerButton.addEventListener('click', () => {
-                        console.log("Register button clicked. Opening registration page.");
-                        // Open register.html in a new tab
-                        chrome.tabs.create({ url: chrome.runtime.getURL("register.html") })
-                            .catch(e => console.error("Failed to open registration page:", e));
-                    });
-                        registerButton.dataset.listenerAdded = 'true'; // Mark listener as added
-                    } else if (!registerButton) {
-                    console.warn("Registration button not found.");
-                }
-            }
-            }
-        } catch (error) {
-            console.error("Error checking registration status:", error);
-            // Display an error message if storage access fails
-            if (messageArea) {
-                 messageArea.textContent = "Error checking registration status.";
-                 messageArea.className = 'message error';
-                 messageArea.style.display = 'block';
-            }
-             // As a fallback, maybe still show the registration prompt if feature is enabled?
-             // Or just show an error and hide everything? Let's show an error and hide main content.
-             if (registrationPrompt) registrationPrompt.classList.add('hidden'); // Hide prompt on error
-             if (unlockSection) unlockSection.classList.add('hidden'); // Hide unlock section on error
-             if (lockSection) lockSection.classList.add('hidden'); // Hide lock section on error
-             if (mainContent) mainContent.classList.add('hidden');
-             if (tabContainer) tabContainer.classList.add('hidden');
-
-        }
-    }
-
-
-    // --- Initial Load ---
-    // Check registration status first to determine which UI to show
-    checkRegistrationStatus();
-    // fetchAndUpdateStatus() and fetchAndDisplayCallingTabUrl() are now called within checkRegistrationStatus
-    // when the main content is displayed.
-
 
 }); // End DOMContentLoaded
 

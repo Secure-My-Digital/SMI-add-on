@@ -2,19 +2,23 @@
 
 product="Secure My Password Manager"
 version=$(version manifest.json);
-build=$(version --build content.js);
+build=$(version --build manifest.json);
+jsfile=background.js
 
-echo "v$version -- $build (background.js)"
+echo "v$version -- $build (manifest-tmpl.json)"
+sed -e "s/\"version\": .*,/\"version\": \"$version\",/" \
+    -e "s/\"name\": .*,/\"name\": \"${product}\",/" \
+    manifest-tmpl.json > manifest.json
 
 sed -e "s/\"version\": .*,/\"version\": \"$version\",/" \
-    -e "s/\"name\": .*,/\"name\": \"${product} ~ $build\",/" \
-    manifest-tmpl.json > manifest.json
+    -e "s/\"name\": .*,/\"name\": \"${product}\",/" \
+    -e "s/\"build\": .*,/\"build\": \"${build}\",/"  config-tmpl.json > config.json
 
 echo "--- # ${product} extension information" > info.yml
 echo "manifest_version: $version" >> info.yml
+echo "manifest_build: $build" >> info.yml
 version --yaml --all background.js >> info.yml
 cat >> info.yml <<EOT
-content_build: $build
 author: $USER
 EOT
 json_xs -f yaml -t json-pretty < info.yml > info.json
@@ -32,3 +36,9 @@ ipfs files rm $noncefile/nonce.yml
 
 echo "# \$Source: https://ipfs.securemy.digital/ipfs/$qm \$" >> info.yml
 json_xs -f yaml -t json-pretty < info.yml > info.json
+
+sed -e "s/\"version\": .*,/\"version\": \"$version\",/" \
+    -e "s/\"name\": .*,/\"name\": \"${product}\",/" \
+    -e "s/\"build\": .*,/\"build\": \"${build}\",/" \
+    -e "s/\"qm\": .*,/\"qm\": \"${qm}\",/" config-tmpl.json > config.json
+

@@ -5,13 +5,11 @@
 // --- Configuration & Constants ---
 const alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+=-`~[]\\{}|;\':",./<>?';
 const emojis = '😭😂🥺🤣❤️✨🙏😍🥰😊😘😲🚀💪💐🦋🤸🕳️🧩💬📸📍📥🎂🎈🎁🎟️🎫🏮🪔🌍🌏🌎🛡👍🎙️🔔🎖️🏆🥇🥈🥉🎲🧩🚦🌟📅🎉🙌🥳📱🤩🎇✨📓✏️🖋️🖊️🔖✍️👀🧷🔐';
-const DEFAULT_TIMEOUT_MINUTES = 5;
+const DEFAULT_TIMEOUT_MINUTES = 0.5;
 const TIMEOUT_STORAGE_KEY = 'siteSecretTimeoutMinutes';
 const USE_EMOJIS_STORAGE_KEY = 'useEmojisForPassword';
 const USE_KEYSTROKES_STORAGE_KEY = 'useKeystrokesAsInputs';
 const PASSWORD_LENGTH_STORAGE_KEY = 'passwordLength';
-const IS_USER_REGISTERED_STORAGE_KEY = 'isUserRegistered'; // Constant for registration status
-const IS_REGISTRATION_FEATURE_ENABLED_STORAGE_KEY = 'isRegistrationFeatureEnabled'; // New constant for registration feature setting
 
 
 // --- Icon Paths ---
@@ -202,7 +200,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 const config = await fetch(chrome.runtime.getURL('./config.json'))
                     .then(response => response.json());
                 // To Be CHECKED 
-                const salt = config.nonce // '59f385a7-8a15-45ab-ab8a-5be9dbffe365'; // A constant salt added to hashing.
+                const salt = config.nonce ?? '59f385a7-8a15-45ab-ab8a-5be9dbffe365'; // A constant salt added to hashing.
 
                 console.debug("key material:",{temporarySiteSecret,domain,salt});
                 const derivedPassword = await derivePassword(
@@ -343,11 +341,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         (async () => { try { const lengthToSet = parseInt(request.length, 10); if (isNaN(lengthToSet) || lengthToSet < 8 || lengthToSet > 64) { throw new Error("Invalid password length (must be 8-64)."); } await chrome.storage.local.set({ [PASSWORD_LENGTH_STORAGE_KEY]: lengthToSet }); console.log(`Password length updated to ${lengthToSet}.`); sendResponse({ success: true }); } catch (error) { console.error("Error setting password length:", error); sendResponse({ success: false, error: error.message }); } })();
         return true;
     }
-        // --- Set Emoji Usage Action ---
-      else if (request.action === "setUseEmojis") {
-        (async () => { try { const useEmojis = !!request.useEmojis; await chrome.storage.local.set({ [USE_EMOJIS_STORAGE_KEY]: useEmojis }); console.log(`Emoji usage for passwords set to: ${useEmojis}.`); sendResponse({ success: true }); } catch (error) { console.error("Error setting emoji usage:", error); sendResponse({ success: false, error: error.message }); } })();
-        return true;
-    }
         // --- Set Keystroke Usage Action ---
       else if (request.action === "setUseKeystrokes") {
         (async () => { try {
@@ -356,58 +349,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             } catch (error) { console.error("Error setting keystroke usage:", error); sendResponse({ success: false, error: error.message }); } })();
         return true;
     }
-    // --- Register User Action ---
-    else if (request.action === "registerUser") {
-        const initialSiteSecret = request.siteSecret;
-        if (!initialSiteSecret) {
-            sendResponse({ success: false, error: "No site password provided for registration." });
-            return false;
-        }
-        (async () => {
-            try {
-                // Save the initial site secret and mark as registered
-                await chrome.storage.local.set({
-                    [IS_USER_REGISTERED_STORAGE_KEY]: true,
-                    // Note: We are NOT storing the siteSecret directly here for security.
-                    // The siteSecret is only used temporarily in the background script for derivation.
-                    // The registration process itself should ideally involve setting up
-                    // a secure way to handle the initial password/entropy, but for this
-                    // flow, we'll just mark registration complete.
-                    // If you need to save something derived from the initial password,
-                    // that logic would go here.
-                });
-                console.log("User registered successfully.");
-                // Set the temporary site secret immediately after registration
-                setTemporarySiteSecret(initialSiteSecret);
-                sendResponse({ success: true, message: "Registration successful! Extension unlocked." });
-
-                // Optionally, close the registration tab and open options page
-                if (sender && sender.tab && sender.tab.id) {
-                     chrome.tabs.remove(sender.tab.id).catch(e => console.warn("Failed to close registration tab:", e));
-                }
-                 chrome.runtime.openOptionsPage();
-
-            } catch (error) {
-                console.error("Error during user registration:", error);
-                sendResponse({ success: false, error: error.message });
-            }
-        })();
-        return true; // Indicates async response
-    }
-    // --- Set Registration Enabled Action ---
-    else if (request.action === "setRegistrationEnabled") {
-        const isEnabled = !!request.enabled;
-        (async () => {
-            try {
-                await chrome.storage.local.set({ [IS_REGISTRATION_FEATURE_ENABLED_STORAGE_KEY]: isEnabled });
-                console.log(`Registration feature enabled set to: ${isEnabled}.`);
-                sendResponse({ success: true });
-            } catch (error) {
-                console.error("Error setting registration enabled:", error);
-                sendResponse({ success: false, error: error.message });
-            }
-        })();
-        return true; // Indicates async response
+        // --- Set Emoji Usage Action ---
+      else if (request.action === "setUseEmojis") {
+        (async () => { try { const useEmojis = !!request.useEmojis; await chrome.storage.local.set({ [USE_EMOJIS_STORAGE_KEY]: useEmojis }); console.log(`Emoji usage for passwords set to: ${useEmojis}.`); sendResponse({ success: true }); } catch (error) { console.error("Error setting emoji usage:", error); sendResponse({ success: false, error: error.message }); } })();
+        return true;
     }
     else {
         console.warn("Unknown action received:", request.action);
@@ -419,13 +364,10 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     if (details.reason === "install") {
         console.log("Performing first-time setup.");
         try {
-            // Do NOT set IS_USER_REGISTERED_STORAGE_KEY here on install
             await chrome.storage.local.set({
-                [PASSWORD_LENGTH_STORAGE_KEY]: 18,
                 [TIMEOUT_STORAGE_KEY]: DEFAULT_TIMEOUT_MINUTES,
-                [USE_EMOJIS_STORAGE_KEY]: false,
-                [USE_KEYSTROKES_STORAGE_KEY]: true, // Default to keystrokes enabled
-                [IS_REGISTRATION_FEATURE_ENABLED_STORAGE_KEY]: false // Default registration feature OFF
+                [PASSWORD_LENGTH_STORAGE_KEY]: 18,
+                [USE_EMOJIS_STORAGE_KEY]: true,
             });
             console.log("Default settings saved.");
         } catch (error) {
