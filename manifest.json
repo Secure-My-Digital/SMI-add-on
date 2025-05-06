@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Secure My Password Manager ~ zijy",
+  "version": "0.0.73",
+  "description": "Secure site passwords from a easy password (Simple Model).",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "windows",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "https://fonts.googleapis.com/*",
+    "https://fonts.gstatic.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_title": "Open Secure My Password Manager Options"
+  },
+  "options_page": "options.html",
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [ "icon16.png", "icon_locked.png" ], // List icons used by options page
+      "matches": [ "<all_urls>" ] // Or restrict to your options page URL if known (less common)
+    }
+  ]
+}

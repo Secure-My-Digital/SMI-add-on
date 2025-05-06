@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure My Password Manager Extension</title>
+    <link rel="stylesheet" href="options.css">
+    <link id="faviconLink" rel="icon" type="image/png" href="icon16.png">
+    <style>
+        /* Basic styles for hidden/active classes if not in options.css */
+        .hidden { display: none !important; }
+        .tab-content { display: none; } /* Hide all content by default */
+        .tab-content.active { display: block; } /* Show active content */
+        /* Ensure tab buttons have a visual indicator when active */
+        .tabs button.active {
+            font-weight: bold;
+            border-bottom: 2px solid var(--color-primary-green); /* Use your theme color */
+        }
+        button:disabled { cursor: not-allowed; opacity: 0.6; }
+        /* Add basic message styling */
+        .message {
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            display: none; /* Hidden by default */
+            min-height: 1.2em; /* Prevent layout shift when message appears/disappears */
+        }
+        .message.success { background-color: #e8f5e9; border-color: #a5d6a7; color: #2e7d32; }
+        .message.error { background-color: #ffebee; border-color: #e57373; color: #c62828; }
+        /* Add status indicator styling */
+        #statusText { margin-top: 15px; padding: 8px; border-radius: 4px; font-weight: bold; text-align: center; }
+        .status-locked { background-color: #ffebee; color: #c62828; border: 1px solid #e57373; }
+        .status-unlocked { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        /* Slider styling */
+        .slider-container { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
+        input[type="range"] { flex-grow: 1; }
+
+    </style>
+</head>
+<body>
+   <div id="registrationPrompt" class="hidden">
+        <h2>Welcome!</h2>
+        <p>It looks like this is your first time using Secure My Password Manager. Please register to get started.</p>
+        <button id="registerButton">Register Now</button>
+   </div>
+   <div class="container">
+    <h1><span id="productName">Secure My Password Manager</span></h1>
+    <div>Extension version: <span id="extensionVersion"></span></div>
+
+
+    <div class="tab-container">
+        <div class="tabs">
+            <button class="tab active" data-tab="tabLock">🔐 Lock / Unlock</button>
+            <button class="tab" data-tab="tabSettings">⚙️ Settings</button>
+            <button class="tab" data-tab="tabAbout">ℹ️ About</button>
+        </div>
+
+        <div class="tab-content active" id="tabLock">
+            <div id="messageArea" class="message"></div>
+
+            <div id="unlockSection" class="section">
+                <h2>Unlock Extension</h2>
+                <h3>Calling Tab Information</h3>
+                <p>URL of the tab that requested password generation:</p>
+                <p><strong id="callingTabUrlDisplay">Loading...</strong></p>
+
+                <div class="password-input-container">
+                    <label for="sitePasswordInput">Site Password:</label>
+                    <input type="password" id="sitePasswordInput" placeholder="Enter site password">
+                    <span class="peek-password" id="peekEasyPassword">👁️</span>
+                </div>
+                <button id="unlockButton" class="primary-button">Unlock</button>
+            </div>
+
+            <div id="lockSection" class="section hidden">
+                <h2>Lock Extension</h2>
+                <div>
+                    <span id="autoLockInfo" style="display: none;">Auto-locks in:</span>
+                    <span id="countdownDisplay" style="display: none; font-weight: bold;">--:--</span>
+                </div>
+                <button id="lockButton" class="danger-button">
+                    <span id="statusIcon">🔒</span> Lock Now
+                </button>
+            </div>
+
+            <div id="statusText" class="status-locked">Checking...</div>
+        </div>
+
+        <div class="tab-content" id="tabSettings">
+           <div class="section">
+               <h2>Registration Feature</h2>
+               <label>
+                   <input type="checkbox" id="enableRegistrationCheckbox">
+                   Enable User Registration Feature
+               </label>
+               <p id="registrationFeatureMessage" class="message"></p>
+           </div>
+            <div class="section">
+                <h2>Keystroke Entropy</h2>
+                <label>
+                    <input type="checkbox" id="useKeystrokesCheckbox" checked>
+                    Use Keystrokes as Inputs
+                </label>
+                <p id="keystrokesMessage" class="message"></p>
+            </div>
+
+            <div class="section">
+                <h2>Password Alphabet Options</h2>
+                <label>
+                    <input type="checkbox" id="useEmojisCheckbox" checked>
+                    Use Emojis in Generated Password
+                </label>
+                <p id="emojisMessage" class="message"></p>
+            </div>
+
+            <div class="section">
+                <h2>Password Settings</h2>
+                <label for="passwordLengthInput">Generated Password Length:</label>
+                <input type="number" id="passwordLengthInput" min="8" max="64" value="18">
+                <button id="setLengthButton" class="secondary-button">Set Length</button>
+                <p id="lengthMessage" class="message"></p>
+            </div>
+
+            <div class="section">
+                <h2>Auto-Lock Timeout</h2>
+                <label for="timeoutSlider">Set Timeout (minutes):</label>
+                <div class="slider-container">
+                     <input type="range" id="timeoutSlider" min="1" max="60" value="5" step="1">
+                    <span id="timeoutValueDisplay" style="font-weight: bold; min-width: 70px; text-align: right;">5 minutes</span>
+                </div>
+                 <p id="timeoutMessage" class="message"></p>
+                 </div>
+        </div>
+
+        <div class="tab-content" id="tabAbout">
+            <div class="section">
+                <h2>About</h2>
+                <p>This extension securely derives site-specific passwords from a site password.</p>
+                <p>Version: <span id="extensionVersionAbout"></span></p> <p>Developed with ❤️ by <strong>SecureMy.digital</strong>.</p>
+            </div>
+        </div>
+    </div>
+   </div>
+    <script src="options.js"></script>
+</body>
+</html>
+
