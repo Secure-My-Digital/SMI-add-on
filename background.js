@@ -69,7 +69,7 @@ async function derivePassword(sitePassword, domain, salt, options = {}) {
     if (!sitePassword || !domain) {
         throw new Error("Site password and domain are required.");
     }
-    const { length = 18, alphabet: targetAlphabet = alphabet } = options;
+    const { length = 28, alphabet: targetAlphabet = alphabet } = options;
     const combinedInput = [sitePassword, domain, salt].join('\n');
     console.debug({ combinedInput });
     const encoder = new TextEncoder();
@@ -166,61 +166,39 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.debug("Background received action:", request.action);
 
     // --- Generate Password Action ---
-    if (request.action === "generatePassword") {
-        if (!temporarySiteSecret) {
-            console.log("Extension is locked. Requesting unlock via options page.");
-            // --- Store pending request details ---
-            const tabId = sender?.tab?.id ?? null;
-            const url = request?.url ?? null;
-            if (tabId && url) {
-                pendingRequestInfo = { tabId: tabId, url: url };
-                console.log("Storing pending request info:", pendingRequestInfo);
-            } else {
-                pendingRequestInfo = null; // Clear if info is incomplete
-                console.warn("Could not get complete info for pending request. Auto-fill might not work.", { tabId, url });
-            }
-            // ---
-            chrome.runtime.openOptionsPage();
-            sendResponse({ actionRequired: 'openOptions' });
-            return false; // No async response needed here
-        }
-        // Extension unlocked, generate password immediately
-        (async () => {
-            try {
-                const url = new URL(request.url);
-                const domain = url.hostname;
-                const settings = await chrome.storage.local.get([PASSWORD_LENGTH_STORAGE_KEY, USE_EMOJIS_STORAGE_KEY]);
-                console.debug("generatePassword settings received:", settings, typeof settings);
-                // if (typeof settings !== 'object' || settings === null) { let settings = {}; }
-                const passwordLength = settings?.[PASSWORD_LENGTH_STORAGE_KEY] ?? 18;
-                const useEmojis = settings?.[USE_EMOJIS_STORAGE_KEY] ?? true;
-                const useKeystrokes = settings?.[USE_KEYSTROKES_STORAGE_KEY] ?? true;
-                const finalAlphabet = useEmojis ? (alphabet + emojis) : alphabet;
-                console.debug({ finalAlphabet });
-                const config = await fetch(chrome.runtime.getURL('./config.json'))
-                    .then(response => response.json());
-                // To Be CHECKED 
-                const salt = config.nonce ?? '59f385a7-8a15-45ab-ab8a-5be9dbffe365'; // A constant salt added to hashing.
+    // Modified section in background.js for the "generatePassword" action
+// Replace the existing if block with this updated version
 
-                console.debug("key material:",{temporarySiteSecret,domain,salt});
-                const derivedPassword = await derivePassword(
-                    temporarySiteSecret, domain, salt, { length: passwordLength, alphabet: finalAlphabet }
-                );
-                console.log(`Password generated for domain: ${derivedPassword} for ${domain} (direct request)`);
-                sendResponse({ password: derivedPassword });
-                setTemporarySiteSecret(temporarySiteSecret); // Reset timer
-            } catch (error) {
-                // --- Log the FULL error object when storage.get fails ---
-                console.error("Error occurred during password generation process, potentially during storage access.");
-                console.error("Full error object:", error); // Log the entire error
-                console.error("Value of 'settings' variable at time of error (may be undefined if storage failed):", settings);
-                // ---
-                console.error("Error during direct password generation:", error);
-                sendResponse({ password: null, error: error.message });
-            }
-        })();
-        return true;
-        // Async response
+if (request.action === "generatePassword") {
+    if (!temporarySiteSecret) {
+        console.log("Extension is locked. Requesting unlock via options page.");
+        // --- Store pending request details ---
+        const tabId = sender?.tab?.id ?? null;
+        const url = request?.url ?? null;
+        if (tabId && url) {
+            pendingRequestInfo = { tabId: tabId, url: url };
+            console.log("Storing pending request info:", pendingRequestInfo);
+            
+            // Open options page and pass URL information via query parameters
+            chrome.runtime.openOptionsPage(() => {
+                // This callback executes after the options page has been opened
+                console.log("Options page opened, sending URL info to any existing options pages");
+                // Broadcast to any open options page(s)
+                chrome.runtime.sendMessage({ 
+                    action: "pendingRequestInfo", 
+                    pendingRequest: pendingRequestInfo 
+                });
+            });
+        } else {
+            pendingRequestInfo = null; // Clear if info is incomplete
+            console.warn("Could not get complete info for pending request. Auto-fill might not work.", { tabId, url });
+            chrome.runtime.openOptionsPage();
+        }
+        // ---
+        sendResponse({ actionRequired: 'openOptions' });
+        return false; // No async response needed here
+    }
+    
 
         // --- Unlock Extension Action ---
     } else if (request.action === "unlockExtension") {
@@ -257,7 +235,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         const settings = await chrome.storage.local.get([PASSWORD_LENGTH_STORAGE_KEY, USE_EMOJIS_STORAGE_KEY, USE_KEYSTROKES_STORAGE_KEY]);
                         console.debug("Unlock settings received:", settings, typeof settings);
                         // if (typeof settings !== 'object' || settings === null) { let settings = {}; }
-                        const passwordLength = settings?.[PASSWORD_LENGTH_STORAGE_KEY] ?? 18;
+                        const passwordLength = settings?.[PASSWORD_LENGTH_STORAGE_KEY] ?? 28;
                         const useEmojis = settings?.[USE_EMOJIS_STORAGE_KEY] ?? true;
                         const finalAlphabet = useEmojis ? (alphabet + emojis) : alphabet;
                         console.debug({ finalAlphabet });
@@ -305,6 +283,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         // Return false because we sent the response to options page synchronously
         return false;
         // --- Lock Extension Action ---
+
     } else if (request.action === "lockExtension") {
         clearTemporarySiteSecret();
         // Clears state, icon, pending request, reloads options
@@ -366,7 +345,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
         try {
             await chrome.storage.local.set({
                 [TIMEOUT_STORAGE_KEY]: DEFAULT_TIMEOUT_MINUTES,
-                [PASSWORD_LENGTH_STORAGE_KEY]: 18,
+                [PASSWORD_LENGTH_STORAGE_KEY]: 28,
                 [USE_EMOJIS_STORAGE_KEY]: true,
             });
             console.log("Default settings saved.");

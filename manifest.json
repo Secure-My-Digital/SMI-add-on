@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Secure My Password Manager",
-  "version": "0.0.0",
+  "version": "0.0.73",
   "description": "Secure site passwords from a easy password (Simple Model).",
   "permissions": [
     "storage",

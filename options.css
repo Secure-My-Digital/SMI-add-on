@@ -1,0 +1,287 @@
+/* options.css - Merged with Cybersecurity Theme and Max Width */
+
+/* Define CSS Variables for the Theme */
+:root {
+  --color-primary-green: #04bf33; /* A standard green */
+  --color-primary-dark-green: #012611; /* A standard dark green */
+
+  --color-primary-blue: #007bff; /* A standard blue */
+  --color-accent-cyan: #17a2b8; /* A cyan-ish accent */
+  --color-danger-red-hue: hsl(350, 70%, 50%); /* Red with a 350 hue (adjust saturation/lightness as needed) */
+  --color-background: #f8f9fa; /* Light background for content area */
+  --color-body-background: #e9ecef; /* Slightly darker background for outside container */
+
+  --color-text: #212529; /* Dark text color */
+  --color-border-green: #07f25a; /* Border color */
+  --color-border-blue: #ced4da; /* Border color */
+  --color-light-grey: #f1f1f1; /* Light grey for inactive tabs/backgrounds */
+  --color-dark-grey: #333; /* Dark grey from original text color */
+  --color-medium-grey: #555; /* Medium grey from original message color */
+  --color-success-green: #28a745; /* Standard green for success */
+  --color-success-green-dark: #155724; /* Darker green for success text */
+  --color-danger-red-dark: #721c24; /* Darker red for danger text */
+  --color-danger-red-light: #f8d7da; /* Lighter red for danger background */
+}
+
+body {
+  font-family: system-ui, sans-serif; /* Kept user's font */
+  /* Removed padding and min-width from body, handled by container and body flex */
+  background-color: var(--color-body-background); /* Apply the body background color */
+  background-image: URL(smd-background.webp);
+  background-size: cover;
+  
+  margin: 0; /* Remove default body margin */
+  padding: 20px; /* Add some padding around the content */
+  display: flex; /* Use flexbox to center the container */
+  justify-content: center; /* Center container horizontally */
+  align-items: center; /* Align container to the top */
+  flex-direction: column; 
+  gap: 10px;
+  min-height: 100vh; /* Ensure body takes at least full viewport height */
+  color: var(--color-dark-grey); /* Apply default text color from user's base */
+}
+
+/* Main container for max width and centering */
+.container {
+  max-width: 640px; /* Set the maximum width */
+  width: 100%; /* Ensure it takes full width up to max-width */
+  background-color: var(--color-background); /* Apply content background color */
+  padding: 20px; /* Add padding inside the container */
+  border-radius: 8px; /* Optional: Add rounded corners */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Optional: Add a subtle shadow */
+  box-sizing: border-box; /* Include padding in the element's total width and height */
+}
+
+
+h1 {
+  font-size: 1.5em;
+  margin-bottom: 10px;
+  color: var(--color-primary-dark-green); /* Use primary color for headings */
+}
+
+.tab-container {
+  margin-top: 10px;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 2px solid var(--color-border-green); /* Use theme border color */
+}
+
+.tab {
+  flex-grow: 1;
+  padding: 10px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-weight: bold;
+  border-bottom: 3px solid transparent;
+  text-align: center;
+  transition: border-color 0.2s;
+  color: var(--color-dark-grey); /* Default tab text color */
+}
+
+.tab.active {
+  border-color: var(--color-primary-green); /* Active tab border color */
+  color: var(--color-primary-dark-green); /* Active tab text color */
+}
+
+.tab-content {
+  display: none;
+  padding: 20px 0;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.section {
+  margin-bottom: 20px;
+  padding: 15px;
+  border-radius: 5px;
+  background: #fff; /* Kept white background for sections */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.section h2 {
+  margin-top: 0;
+  font-size: 1.1em;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--color-border-green); /* Use theme border color */
+  padding-bottom: 5px;
+  color: var(--color-primary-dark-green); /* Use primary color for section headings */
+}
+
+label {
+  display: block;
+  margin: 10px 0 5px;
+  font-weight: 600;
+}
+
+.password-input-container {
+  display: flex; /* Use flexbox to align children horizontally */
+  align-items: center; /* Vertically align items in the middle of the flex container */
+  position: relative; /* Needed to position the icon absolutely within this container */
+  /* Removed margin-bottom from container, add margin below if needed */
+   margin-bottom: 10px; /* Added margin below the container */
+}
+
+/* Style for input fields */
+input[type="text"], /* Added text type for peek functionality */
+input[type="password"],
+input[type="number"] {
+  padding: 8px;
+  border: 1px solid var(--color-border-green); /* Use theme border color */
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box; /* Include padding and border in element's total width */
+  /* Removed margin-bottom from individual inputs, handled by container or label */
+}
+
+
+#sitePasswordInput {
+  /* Specific padding for the password input to make space for the icon */
+  padding-right: 30px; /* Adjust this value based on the size of your icon */
+  /* Other input styles are inherited from input[type="password"] */
+}
+
+input[type="number"] {
+  max-width: 80px;
+}
+
+button {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+  /* Base button styles - specific colors handled by utility classes */
+}
+
+.primary-button {
+  background-color: var(--color-primary-green); /* Use theme primary color */
+  color: white;
+}
+
+.secondary-button {
+  background-color: #6c757d; /* Kept original secondary color */
+  color: white;
+}
+
+.danger-button {
+  background-color: var(--color-danger-red-hue); /* Use theme danger red hue */
+  color: white;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+#statusText {
+  font-weight: 600;
+  padding: 10px;
+  border-radius: 4px;
+  text-align: center;
+  margin-bottom: 10px; /* Add space below status */
+}
+
+.status-locked {
+  background-color: var(--color-danger-red-light); /* Use theme light danger red */
+  color: var(--color-danger-red-dark); /* Use theme dark danger red */
+  border: 1px solid #f5c6cb; /* Kept original border color */
+}
+
+.status-unlocked {
+  background-color: var(--color-success-green); /* Use theme success green */
+  color: white; /* White text for better contrast */
+  border: 1px solid darken(var(--color-success-green), 10%); /* Darken green for border */
+}
+
+#messageArea {
+  margin-top: 10px;
+  font-style: italic;
+  color: var(--color-medium-grey); /* Use theme medium grey */
+  text-align: center;
+  min-height: 1.2em; /* Reserve space to prevent layout shifts */
+}
+
+/* Message styles using theme colors */
+.message.error {
+  color: white; /* White text for error messages */
+  background-color: var(--color-danger-red-hue); /* Use the red hue for errors */
+  border: 1px solid darken(var(--color-danger-red-hue), 10%); /* Darken red for border */
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+}
+
+.message.success {
+    color: white;
+    background-color: var(--color-success-green); /* Use theme success green */
+    border: 1px solid darken(var(--color-success-green), 10%); /* Darken green for border */
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+input[type="range"] {
+  flex-grow: 1;
+  cursor: pointer;
+}
+
+#timeoutValueDisplay {
+  font-weight: bold;
+  min-width: 70px;
+  text-align: right;
+}
+
+#countdownDisplay {
+  display: inline-block;
+  margin-left: 15px;
+  font-weight: bold;
+  color: var(--color-success-green-dark); /* Use theme dark success green */
+}
+
+.hidden {
+  display: none;
+}
+
+/* Style for the peek password icon */
+.peek-password {
+  position: absolute; /* Position the icon absolutely within the container */
+  right: 5px; /* Adjust this value to control the distance from the right edge of the input */
+
+  /* --- Vertical Centering --- */
+  top: 50%; /* Position the top edge of the icon at the vertical midpoint of the container */
+  transform: translateY(-50%); /* Shift the icon up by half of its own height */
+  /* ------------------------- */
+
+  cursor: pointer; /* Indicate that the icon is clickable */
+  color: var(--color-primary-green); /* Or var(--color-accent-cyan) */
+  font-size: 1.2em; /* Adjust size if needed */
+}
+
+/* Add styles for messages below settings controls */
+#lengthMessage,
+#emojisMessage,
+#timeoutMessage,
+#keystrokesMessage {
+    font-size: 0.9em;
+    margin-top: -8px; /* Pull message up slightly */
+    margin-bottom: 10px;
+    min-height: 1.2em; /* Reserve space to prevent layout shifts */
+    /* Default color can be inherited or set specifically */
+}
+
+#keystrokesMessage {
+    font-weight: bold; /* Make keystroke message stand out */
+    /* Color is set dynamically in JS */
+}
+
